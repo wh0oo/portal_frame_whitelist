@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.wh0oo.portalframewhitelist.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "mixins": [
+    "PortalShapeMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
