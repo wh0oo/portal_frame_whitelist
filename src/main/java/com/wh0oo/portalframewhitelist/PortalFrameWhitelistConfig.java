@@ -7,7 +7,10 @@ import com.google.gson.JsonParser;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -20,6 +23,8 @@ import java.util.Locale;
 import java.util.Set;
 
 public final class PortalFrameWhitelistConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger("AnyBlock Portals");
+
     private static final Path CONFIG_PATH =
         FabricLoader.getInstance().getConfigDir().resolve("portal_frame_whitelist.json");
 
@@ -34,6 +39,11 @@ public final class PortalFrameWhitelistConfig {
         }
 
         Set<String> loaded = new HashSet<>();
+        Set<String> validBlockIds = new HashSet<>();
+
+        for (Block block : BuiltInRegistries.BLOCK) {
+            validBlockIds.add(BuiltInRegistries.BLOCK.getKey(block).toString());
+        }
 
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
             JsonElement root = JsonParser.parseReader(reader);
@@ -45,8 +55,13 @@ public final class PortalFrameWhitelistConfig {
                     for (JsonElement element : blocks) {
                         if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
                             String id = element.getAsString().trim().toLowerCase(Locale.ROOT);
+
                             if (!id.isEmpty()) {
-                                loaded.add(id);
+                                if (validBlockIds.contains(id)) {
+                                    loaded.add(id);
+                                } else {
+                                    LOGGER.warn("Unknown block ID in config, ignoring: {}", id);
+                                }
                             }
                         }
                     }
