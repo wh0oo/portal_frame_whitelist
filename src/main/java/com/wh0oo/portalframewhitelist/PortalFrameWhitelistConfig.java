@@ -60,7 +60,7 @@ public final class PortalFrameWhitelistConfig {
                                 if (validBlockIds.contains(id)) {
                                     loaded.add(id);
                                 } else {
-                                    LOGGER.warn("Unknown block ID in config, ignoring: {}", id);
+                                    LOGGER.warn("[AnyBlock Portals] Unknown block ID in config, ignoring: {}", id);
                                 }
                             }
                         }
