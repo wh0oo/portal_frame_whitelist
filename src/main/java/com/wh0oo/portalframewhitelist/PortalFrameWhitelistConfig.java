@@ -1,10 +1,10 @@
 package com.wh0oo.portalframewhitelist;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.TreeSet;
 
 public final class PortalFrameWhitelistConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger("AnyBlock Portals");
@@ -39,11 +40,7 @@ public final class PortalFrameWhitelistConfig {
         }
 
         Set<String> loaded = new HashSet<>();
-        Set<String> validBlockIds = new HashSet<>();
-
-        for (Block block : BuiltInRegistries.BLOCK) {
-            validBlockIds.add(BuiltInRegistries.BLOCK.getKey(block).toString());
-        }
+        Set<String> validBlockIds = getValidBlockIds();
 
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
             JsonElement root = JsonParser.parseReader(reader);
@@ -54,7 +51,7 @@ public final class PortalFrameWhitelistConfig {
                 if (blocks != null) {
                     for (JsonElement element : blocks) {
                         if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
-                            String id = element.getAsString().trim().toLowerCase(Locale.ROOT);
+                            String id = normalizeBlockId(element.getAsString());
 
                             if (!id.isEmpty()) {
                                 if (validBlockIds.contains(id)) {
@@ -82,9 +79,65 @@ public final class PortalFrameWhitelistConfig {
         return whitelist.contains(id);
     }
 
-    private static void writeDefaultConfig() {
+    public static Set<String> getWhitelist() {
+        return whitelist;
+    }
+
+    public static String normalizeBlockId(String id) {
+        return id.trim().toLowerCase(Locale.ROOT);
+    }
+
+    public static boolean isKnownBlockId(String id) {
+        return getValidBlockIds().contains(normalizeBlockId(id));
+    }
+
+    public static boolean addBlock(String id) {
+        String normalized = normalizeBlockId(id);
+
+        if (!isKnownBlockId(normalized) || whitelist.contains(normalized)) {
+            return false;
+        }
+
+        Set<String> updated = new HashSet<>(whitelist);
+        updated.add(normalized);
+        writeConfig(updated);
+        whitelist = Collections.unmodifiableSet(updated);
+        return true;
+    }
+
+    public static boolean removeBlock(String id) {
+        String normalized = normalizeBlockId(id);
+
+        if (!whitelist.contains(normalized)) {
+            return false;
+        }
+
+        Set<String> updated = new HashSet<>(whitelist);
+        updated.remove(normalized);
+        writeConfig(updated);
+        whitelist = Collections.unmodifiableSet(updated);
+        return true;
+    }
+
+    private static Set<String> getValidBlockIds() {
+        Set<String> validBlockIds = new HashSet<>();
+
+        for (Block block : BuiltInRegistries.BLOCK) {
+            validBlockIds.add(BuiltInRegistries.BLOCK.getKey(block).toString());
+        }
+
+        return validBlockIds;
+    }
+
+    private static void writeConfig(Set<String> blocks) {
         JsonObject root = new JsonObject();
-        root.add("blocks", new JsonArray());
+        JsonArray blockArray = new JsonArray();
+
+        for (String id : new TreeSet<>(blocks)) {
+            blockArray.add(id);
+        }
+
+        root.add("blocks", blockArray);
 
         try {
             Files.createDirectories(CONFIG_PATH.getParent());
@@ -97,9 +150,13 @@ public final class PortalFrameWhitelistConfig {
             }
         } catch (IOException e) {
             throw new RuntimeException(
-                "Failed to create Portal Frame Whitelist config: " + CONFIG_PATH,
+                "Failed to write Portal Frame Whitelist config: " + CONFIG_PATH,
                 e
             );
         }
+    }
+
+    private static void writeDefaultConfig() {
+        writeConfig(Collections.emptySet());
     }
 }

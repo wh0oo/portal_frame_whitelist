@@ -8,5 +8,6 @@ public class PortalFrameWhitelistInitializer implements ModInitializer {
     public void onInitialize() {
         MixinExtrasBootstrap.init();
         PortalFrameWhitelistConfig.load();
+        AnyBlockPortalsCommands.register();
     }
 }
