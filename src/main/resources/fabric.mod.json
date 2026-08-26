@@ -6,6 +6,9 @@
   "description": "Allows configured blocks to be used as additional Nether portal frame blocks.",
   "authors": ["wh0oo"],
   "license": "MIT",
+  "contact": {
+    "sources": "https://github.com/wh0oo/portal_frame_whitelist"
+  },
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -17,7 +20,7 @@
   ],
   "depends": {
     "fabricloader": ">=0.19.3",
-    "minecraft": "~26.2",
+    "minecraft": "26.2",
     "java": ">=25",
     "fabric-api": "*"
   }

@@ -65,6 +65,7 @@ public final class PortalFrameWhitelistConfig {
                 }
             }
         } catch (Exception e) {
+            LOGGER.error("[AnyBlock Portals] Failed to load portal_frame_whitelist.json", e);
             throw new RuntimeException(
                 "Failed to load Portal Frame Whitelist config: " + CONFIG_PATH,
                 e
@@ -149,6 +150,7 @@ public final class PortalFrameWhitelistConfig {
                     .toJson(root, writer);
             }
         } catch (IOException e) {
+            LOGGER.error("[AnyBlock Portals] Failed to write portal_frame_whitelist.json", e);
             throw new RuntimeException(
                 "Failed to write Portal Frame Whitelist config: " + CONFIG_PATH,
                 e

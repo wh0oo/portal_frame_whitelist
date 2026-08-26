@@ -35,19 +35,20 @@ public final class AnyBlockPortalsCommands {
                                     return 0;
                                 }
 
-                                if (PortalFrameWhitelistConfig.getWhitelist().contains(id)) {
-                                    context.getSource().sendSuccess(
-                                        () -> Component.literal(
-                                            "[AnyBlock Portals] " + id
-                                                + " is already in the portal frame whitelist. No changes were made."
-                                        ),
-                                        false
-                                    );
-                                    return 1;
-                                }
-
                                 try {
-                                    PortalFrameWhitelistConfig.addBlock(id);
+                                    boolean added = PortalFrameWhitelistConfig.addBlock(id);
+
+                                    if (!added) {
+                                        context.getSource().sendSuccess(
+                                            () -> Component.literal(
+                                                "[AnyBlock Portals] " + id
+                                                    + " is already in the portal frame whitelist. No changes were made."
+                                            ),
+                                            false
+                                        );
+                                        return 1;
+                                    }
+
                                     context.getSource().sendSuccess(
                                         () -> Component.literal(
                                             "[AnyBlock Portals] Added " + id
@@ -73,19 +74,20 @@ public final class AnyBlockPortalsCommands {
                                 String entered = StringArgumentType.getString(context, "block_id");
                                 String id = PortalFrameWhitelistConfig.normalizeBlockId(entered);
 
-                                if (!PortalFrameWhitelistConfig.getWhitelist().contains(id)) {
-                                    context.getSource().sendSuccess(
-                                        () -> Component.literal(
-                                            "[AnyBlock Portals] " + id
-                                                + " is not currently in the portal frame whitelist. No changes were made."
-                                        ),
-                                        false
-                                    );
-                                    return 1;
-                                }
-
                                 try {
-                                    PortalFrameWhitelistConfig.removeBlock(id);
+                                    boolean removed = PortalFrameWhitelistConfig.removeBlock(id);
+
+                                    if (!removed) {
+                                        context.getSource().sendSuccess(
+                                            () -> Component.literal(
+                                                "[AnyBlock Portals] " + id
+                                                    + " is not currently in the portal frame whitelist. No changes were made."
+                                            ),
+                                            false
+                                        );
+                                        return 1;
+                                    }
+
                                     context.getSource().sendSuccess(
                                         () -> Component.literal(
                                             "[AnyBlock Portals] Removed " + id
