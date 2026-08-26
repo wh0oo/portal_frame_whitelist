@@ -9,8 +9,7 @@ You choose which blocks are allowed by adding them to the whitelist config. Vani
 * Add custom blocks to Nether portal frames
 * Mix whitelisted blocks with obsidian
 * Use multiple different whitelisted blocks in the same frame
-* Change the whitelist without restarting the server
-* Invalid block IDs are ignored and logged instead of breaking the mod
+* Update the whitelist without restarting the server
 
 ## Config
 
