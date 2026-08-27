@@ -1,6 +1,8 @@
 # AnyBlock Portals
 
-AnyBlock Portals lets you use additional blocks as Nether portal frames.
+I reallllll-y like how nether portals looked using the budding amethyst block, so I started writing a mod for that. But then, I wondered about all the other blocks. So, this was born, and I dont think any other mod does exactly this, and I do not know why!
+
+AnyBlock Portals lets you use additional blocks as Nether portal frames. 
 
 You choose which blocks are allowed by adding them to the whitelist config. Vanilla obsidian portals continue to work normally.
 
