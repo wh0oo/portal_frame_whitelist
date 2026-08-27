@@ -9,7 +9,7 @@
   "contact": {
     "sources": "https://github.com/wh0oo/portal_frame_whitelist"
   },
-  "environment": "*",
+  "environment": "server",
   "entrypoints": {
     "main": [
       "com.wh0oo.portalframewhitelist.PortalFrameWhitelistInitializer"
