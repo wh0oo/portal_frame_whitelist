@@ -1,11 +1,15 @@
 package com.wh0oo.portalframewhitelist;
 
-import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.ResourceArgument;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.permissions.Permissions;
+import net.minecraft.world.level.block.Block;
 
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -20,20 +24,26 @@ public final class AnyBlockPortalsCommands {
                     .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_MODERATOR))
 
                     .then(Commands.literal("add")
-                        .then(Commands.argument("block_id", StringArgumentType.greedyString())
-                            .executes(context -> {
-                                String entered = StringArgumentType.getString(context, "block_id");
-                                String id = PortalFrameWhitelistConfig.normalizeBlockId(entered);
+                        .then(Commands.argument("block_id", ResourceArgument.resource(buildContext, Registries.BLOCK))
+                            .suggests((context, builder) -> {
+                                String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
 
-                                if (!PortalFrameWhitelistConfig.isKnownBlockId(id)) {
-                                    context.getSource().sendFailure(
-                                        Component.literal(
-                                            "[AnyBlock Portals] Unknown block ID: " + id
-                                                + ". Nothing was added. Use a full namespaced ID such as minecraft:pink_wool."
-                                        )
-                                    );
-                                    return 0;
+                                for (Block block : BuiltInRegistries.BLOCK) {
+                                    String id = BuiltInRegistries.BLOCK.getKey(block).toString();
+
+                                    if (id.startsWith(remaining)) {
+                                        builder.suggest(id);
+                                    }
                                 }
+
+                                return builder.buildFuture();
+                            })
+                            .executes(context -> {
+                                Block block = ResourceArgument
+                                    .getResource(context, "block_id", Registries.BLOCK)
+                                    .value();
+
+                                String id = BuiltInRegistries.BLOCK.getKey(block).toString();
 
                                 try {
                                     boolean added = PortalFrameWhitelistConfig.addBlock(id);
@@ -69,10 +79,24 @@ public final class AnyBlockPortalsCommands {
                             })))
 
                     .then(Commands.literal("remove")
-                        .then(Commands.argument("block_id", StringArgumentType.greedyString())
+                        .then(Commands.argument("block_id", ResourceArgument.resource(buildContext, Registries.BLOCK))
+                            .suggests((context, builder) -> {
+                                String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
+
+                                for (String id : new TreeSet<>(PortalFrameWhitelistConfig.getWhitelist())) {
+                                    if (id.startsWith(remaining)) {
+                                        builder.suggest(id);
+                                    }
+                                }
+
+                                return builder.buildFuture();
+                            })
                             .executes(context -> {
-                                String entered = StringArgumentType.getString(context, "block_id");
-                                String id = PortalFrameWhitelistConfig.normalizeBlockId(entered);
+                                Block block = ResourceArgument
+                                    .getResource(context, "block_id", Registries.BLOCK)
+                                    .value();
+
+                                String id = BuiltInRegistries.BLOCK.getKey(block).toString();
 
                                 try {
                                     boolean removed = PortalFrameWhitelistConfig.removeBlock(id);

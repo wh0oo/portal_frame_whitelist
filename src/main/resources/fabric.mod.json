@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "id": "portal_frame_whitelist",
-  "version": "1.0.0+26.2",
+  "version": "${version}",
   "name": "AnyBlock Portals",
-  "description": "Allows configured blocks to be used as additional Nether portal frame blocks.",
+  "description": "Allows configured blocks to be used in Nether portal frames.",
   "authors": ["wh0oo"],
   "license": "MIT",
   "contact": {
