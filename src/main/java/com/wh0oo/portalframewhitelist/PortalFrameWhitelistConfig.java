@@ -18,8 +18,10 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -29,7 +31,8 @@ public final class PortalFrameWhitelistConfig {
     private static final Path CONFIG_PATH =
         FabricLoader.getInstance().getConfigDir().resolve("portal_frame_whitelist.json");
 
-    private static volatile Set<String> whitelist = Collections.emptySet();
+    private static volatile Set<String> whitelistIds = Collections.emptySet();
+    private static volatile Set<Block> whitelistedBlocks = Collections.emptySet();
 
     private PortalFrameWhitelistConfig() {
     }
@@ -39,8 +42,9 @@ public final class PortalFrameWhitelistConfig {
             writeDefaultConfig();
         }
 
-        Set<String> loaded = new HashSet<>();
-        Set<String> validBlockIds = getValidBlockIds();
+        Map<String, Block> blockRegistry = getBlockRegistryMap();
+        Set<String> loadedIds = new HashSet<>();
+        Set<Block> loadedBlocks = new HashSet<>();
 
         try (Reader reader = Files.newBufferedReader(CONFIG_PATH)) {
             JsonElement root = JsonParser.parseReader(reader);
@@ -54,8 +58,11 @@ public final class PortalFrameWhitelistConfig {
                             String id = normalizeBlockId(element.getAsString());
 
                             if (!id.isEmpty()) {
-                                if (validBlockIds.contains(id)) {
-                                    loaded.add(id);
+                                Block block = blockRegistry.get(id);
+
+                                if (block != null) {
+                                    loadedIds.add(id);
+                                    loadedBlocks.add(block);
                                 } else {
                                     LOGGER.warn("[AnyBlock Portals] Unknown block ID in config, ignoring: {}", id);
                                 }
@@ -72,16 +79,16 @@ public final class PortalFrameWhitelistConfig {
             );
         }
 
-        whitelist = Collections.unmodifiableSet(loaded);
+        whitelistIds = Collections.unmodifiableSet(loadedIds);
+        whitelistedBlocks = Collections.unmodifiableSet(loadedBlocks);
     }
 
     public static boolean isWhitelisted(BlockState state) {
-        String id = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
-        return whitelist.contains(id);
+        return whitelistedBlocks.contains(state.getBlock());
     }
 
     public static Set<String> getWhitelist() {
-        return whitelist;
+        return whitelistIds;
     }
 
     public static String normalizeBlockId(String id) {
@@ -89,45 +96,65 @@ public final class PortalFrameWhitelistConfig {
     }
 
     public static boolean isKnownBlockId(String id) {
-        return getValidBlockIds().contains(normalizeBlockId(id));
+        return getBlockRegistryMap().containsKey(normalizeBlockId(id));
     }
 
     public static boolean addBlock(String id) {
         String normalized = normalizeBlockId(id);
+        Map<String, Block> blockRegistry = getBlockRegistryMap();
+        Block block = blockRegistry.get(normalized);
 
-        if (!isKnownBlockId(normalized) || whitelist.contains(normalized)) {
+        if (block == null || whitelistIds.contains(normalized)) {
             return false;
         }
 
-        Set<String> updated = new HashSet<>(whitelist);
-        updated.add(normalized);
-        writeConfig(updated);
-        whitelist = Collections.unmodifiableSet(updated);
+        Set<String> updatedIds = new HashSet<>(whitelistIds);
+        Set<Block> updatedBlocks = new HashSet<>(whitelistedBlocks);
+
+        updatedIds.add(normalized);
+        updatedBlocks.add(block);
+
+        writeConfig(updatedIds);
+
+        whitelistIds = Collections.unmodifiableSet(updatedIds);
+        whitelistedBlocks = Collections.unmodifiableSet(updatedBlocks);
         return true;
     }
 
     public static boolean removeBlock(String id) {
         String normalized = normalizeBlockId(id);
 
-        if (!whitelist.contains(normalized)) {
+        if (!whitelistIds.contains(normalized)) {
             return false;
         }
 
-        Set<String> updated = new HashSet<>(whitelist);
-        updated.remove(normalized);
-        writeConfig(updated);
-        whitelist = Collections.unmodifiableSet(updated);
+        Map<String, Block> blockRegistry = getBlockRegistryMap();
+        Block block = blockRegistry.get(normalized);
+
+        Set<String> updatedIds = new HashSet<>(whitelistIds);
+        Set<Block> updatedBlocks = new HashSet<>(whitelistedBlocks);
+
+        updatedIds.remove(normalized);
+
+        if (block != null) {
+            updatedBlocks.remove(block);
+        }
+
+        writeConfig(updatedIds);
+
+        whitelistIds = Collections.unmodifiableSet(updatedIds);
+        whitelistedBlocks = Collections.unmodifiableSet(updatedBlocks);
         return true;
     }
 
-    private static Set<String> getValidBlockIds() {
-        Set<String> validBlockIds = new HashSet<>();
+    private static Map<String, Block> getBlockRegistryMap() {
+        Map<String, Block> blocks = new HashMap<>();
 
         for (Block block : BuiltInRegistries.BLOCK) {
-            validBlockIds.add(BuiltInRegistries.BLOCK.getKey(block).toString());
+            blocks.put(BuiltInRegistries.BLOCK.getKey(block).toString(), block);
         }
 
-        return validBlockIds;
+        return blocks;
     }
 
     private static void writeConfig(Set<String> blocks) {
